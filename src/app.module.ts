@@ -3,7 +3,7 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { FaqsModule } from './faqs/faqs.module';
 import { ChatBotModule } from './chat-bot/chat-bot.module';
-import { ChatBotGateway } from './chat/chat-bot.gateway';
+import { ChatBotGateway } from './gateway/chat-bot.gateway';
 
 @Module({
   imports: [FaqsModule, ChatBotModule],

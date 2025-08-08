@@ -6,14 +6,20 @@ import {
   OnGatewayInit,
   OnGatewayConnection,
   OnGatewayDisconnect,
+  ConnectedSocket,
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
+import { ChatbotDto } from './dto/chatbot.dto';
+import { UseFilters, UsePipes, ValidationPipe } from '@nestjs/common';
+import { WebSocketExceptionFilter } from './dto/exceptions/ws-exception.filter';
 
 @WebSocketGateway({
   cors: {
     origin: '*', // Adjust in production
   },
 })
+@UseFilters(new WebSocketExceptionFilter())
+
 export class ChatBotGateway
   implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect
 {
@@ -33,15 +39,11 @@ export class ChatBotGateway
   }
 
   @SubscribeMessage('bot_chat')
-  handleMessage(@MessageBody() payload: {
-    fullName: string;
-    email: string;
-    phone: string;
-    message: string;
-  }) {
+  @UsePipes(new ValidationPipe())
+  handleMessage(@MessageBody() payload: ChatbotDto, @ConnectedSocket() client: Socket) {
     const botResponse = this.getBotReply(payload.message);
 
-    this.server.emit('bot_response', botResponse);
+    this.server.to(client.id).emit('bot_response', botResponse);
   }
 
   private getBotReply(text: string): any {
