@@ -1,4 +1,6 @@
-import { IsEmail, IsNotEmpty, IsString } from 'class-validator';
+import { IsEmail, IsNotEmpty, IsNumber, IsString } from 'class-validator';
+import { Type } from 'class-transformer';
+
 
 export class ChatbotDto {
     @IsString()
@@ -11,8 +13,9 @@ export class ChatbotDto {
     email: string;
 
     @IsNotEmpty()
-    @IsString()
-    phone: string;
+    @IsNumber()
+    @Type(() => Number) // 👈 transforms "1234" into 1234
+    phone: number;
 
     @IsNotEmpty()
     @IsString()

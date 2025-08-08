@@ -11,7 +11,10 @@ import {
 import { Server, Socket } from 'socket.io';
 import { ChatbotDto } from './dto/chatbot.dto';
 import { UseFilters, UsePipes, ValidationPipe } from '@nestjs/common';
-import { WebSocketExceptionFilter } from './dto/exceptions/ws-exception.filter';
+
+import { InjectModel } from '@nestjs/sequelize';
+import { BotChats } from 'src/models/chatbot.model';
+import { WebSocketExceptionFilter } from './exceptions/ws-exception.filter';
 
 @WebSocketGateway({
   cors: {
@@ -21,10 +24,14 @@ import { WebSocketExceptionFilter } from './dto/exceptions/ws-exception.filter';
 @UseFilters(new WebSocketExceptionFilter())
 
 export class ChatBotGateway
-  implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect
-{
+  implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect {
   @WebSocketServer()
   server: Server;
+
+  constructor(
+    @InjectModel(BotChats)
+    private readonly botChatsModel: typeof BotChats,
+  ) { }
 
   afterInit(server: Server) {
     console.log('WebSocket initialized');
@@ -40,13 +47,26 @@ export class ChatBotGateway
 
   @SubscribeMessage('bot_chat')
   @UsePipes(new ValidationPipe())
-  handleMessage(@MessageBody() payload: ChatbotDto, @ConnectedSocket() client: Socket) {
-    const botResponse = this.getBotReply(payload.message);
+  async handleMessage(@MessageBody() payload: ChatbotDto, @ConnectedSocket() client: Socket) {
+    const { fullName, email, phone, message } = payload;
+    try {
+      await this.botChatsModel.create({
+        fullName,
+        email,
+        phone,
+        message,
+      });
+    } catch (error) {
+      console.error('Failed to create chat message:', error);
+      throw new Error('Failed to save chat message');
+    }
+
+    const botResponse = await this.getBotReply(message);
 
     this.server.to(client.id).emit('bot_response', botResponse);
   }
 
-  private getBotReply(text: string): any {
+  private async getBotReply(text: string): Promise<any> {
     const msg = text.toLowerCase();
 
     const responses = [
@@ -121,8 +141,8 @@ export class ChatBotGateway
     ];
 
     for (const response of responses) {
-      if (msg.includes(response.question) || 
-          response.alternativeQuestions.some(q => msg.includes(q))) {
+      if (msg.includes(response.question) ||
+        response.alternativeQuestions.some(q => msg.includes(q))) {
         return response;
       }
     }
