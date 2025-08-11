@@ -42,7 +42,7 @@ Bot processes the message and sends an automated reply to that specific user
 #!/bin/bash
 
 # Clone repository
-git clone https://github.com/your-username/nestjs-chatbot.git
+git clone [https://github.com/your-username/nestjs-chatbot.git](https://github.com/ImthiazRagib/nestjs.socket-io.chatBot)
 cd nestjs-chatbot || exit
 
 # Install dependencies
@@ -80,3 +80,4 @@ Example event:
   "phone": 971501234567,
   "message": "Hello bot!"
 }
+
